@@ -1,35 +1,57 @@
 package org.example;
 
+import com.baseketbandit.runeapi.RuneAPI;
+import com.baseketbandit.runeapi.entity.Skill;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
-import java.util.Arrays;
+import java.util.Map;
 
 
 public class Main extends ListenerAdapter {
     public static void main(String[] args) {
-        JDABuilder builder = JDABuilder.createDefault(args[0]);
-
+JDA jda = JDABuilder.createLight("MTA4MDg2MjgzMDA3MDMzNzU5OQ.GHTtES.fEfEfAubr0fkE1lzdoKGmIy-QPiNeYJktQ8nv0")
+                .addEventListeners(new Main())
+                        .setActivity(Activity.playing("OSRS"))
+                                .build();
+jda.updateCommands().addCommands(
+        Commands.slash("stats-lookup", "Lookup stats of another player")
+                .addOption(OptionType.STRING, "name", "type a players osrs name", true),
+        Commands.slash("animal", "Finds a random animal")
+                .addOptions(
+                        new OptionData(OptionType.STRING, "type", "The type of animal to find")
+                                .addChoice("Bird", "bird")
+                                .addChoice("Big Cat", "bigcat")
+                                .addChoice("Canine", "canine")
+                                .addChoice("Fish", "fish")
+                )
+).queue();
         // Disable parts of the cache
-        builder.disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE);
-        builder.setToken("MTA4MDg2MjgzMDA3MDMzNzU5OQ.GqohRx.JNiyLxN7WxdYX0HiYD7kGT0dlRm3Rh7v1zilhA");
-        // Enable the bulk delete event
-        builder.setBulkDeleteSplittingEnabled(false);
-        // Set activity (like "playing Something")
-        builder.setActivity(Activity.watching("Playing OSRS"));
-
-        builder.build();
     }
-@Override
-    public void onMessageReceived(MessageReceivedEvent event) {
-        String PlayerName;
-        if (event.getMessage().toString().contains("!stats")) {
-            PlayerName = event.getMessage().toString().split(" ").toString();
-            System.out.print(PlayerName);
-        }
 
-}
+    @Override
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+        EmbedBuilder e = new EmbedBuilder();
+        if (event.getName().equals("stats-lookup")) {
+            Map<String, Skill> skills = RuneAPI.getStats(event.getOption("name").toString());
+
+            for(Skill skill: skills.values()) {
+                e.addField("Stats", "%s: #%,d - %,d - %,dxp \n" + skill.getName() + skill.getRank() + skill.getLevel() + skill.getExperience(), false);
+
+            }
+            event.replyEmbeds(e.build()).queue();
+        }
+    }
+
+
+
 }
